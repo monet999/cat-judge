@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🐱‍⚖️ 808猫猫法官法庭</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .cat-bg { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); }
+        .judge-robe { background: linear-gradient(to right, #374151, #4b5563); }
+        .verdict-card { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .score-bar { height: 24px; border-radius: 12px; overflow: hidden; }
+        .cat-paw { animation: paw-wave 2s infinite; }
+        @keyframes paw-wave { 0%, 100% { transform: rotate(0deg); } 50% { transform: rotate(-10deg); } }
+    </style>
+</head>
+<body class="cat-bg text-gray-100 min-h-screen font-sans">
+    <div id="app" class="container mx-auto px-4 py-8 max-w-6xl">
+        <header class="text-center mb-12">
+            <h1 class="text-4xl md:text-5xl font-bold mb-4">
+                <span class="text-5xl">🐈‍⬛</span><br>808猫猫法官法庭
+            </h1>
+            <p class="text-xl text-gray-300">理性 · 公正 · 猫式幽默</p>
+            <div class="mt-6">
+                <div class="inline-block judge-robe px-6 py-2 rounded-full text-sm">
+                    <i class="fas fa-gavel mr-2"></i>阁下所陈述的一切，都将成为本喵判决的依据
+                </div>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- 左侧：提交案件 -->
+            <div class="verdict-card p-6 rounded-2xl shadow-xl">
+                <h2 class="text-2xl font-bold mb-6 border-l-4 border-blue-500 pl-3">
+                    <i class="fas fa-file-contract mr-2"></i>提交矛盾案件
+                </h2>
+                <div class="mb-6">
+                    <label class="block mb-2 font-medium"><i class="fas fa-tag mr-2"></i>矛盾类型</label>
+                    <select v-model="issueType" class="w-full p-3 bg-gray-800 rounded-lg border border-gray-700 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        <option value="communication">💬 沟通问题（消息不回、语气不好）</option>
+                        <option value="trust">🤝 信任问题（猜疑、隐私）</option>
+                        <option value="time">⏰ 时间分配（陪伴不够、总是很忙）</option>
+                        <option value="money">💰 财务问题（消费观念、谁来付款）</option>
+                        <option value="life">🏠 生活习惯（家务、作息、卫生）</option>
+                        <option value="others">❓ 其他问题</option>
+                    </select>
+                </div>
+
+                <div class="mb-8">
+                    <h3 class="text-xl font-semibold mb-4 p-3 bg-blue-900 bg-opacity-30 rounded-lg">
+                        <i class="fas fa-male mr-2"></i>👨 男方视角陈述
+                    </h3>
+                    <textarea v-model="boyfriendView" placeholder="请男方详细描述事情的经过、你的感受和想法...（示例：她总因为我打游戏生气，但我觉得自己工作后放松一下很正常）"
+                        class="w-full h-48 p-4 bg-gray-900 rounded-lg border border-blue-800 focus:border-blue-400 focus:outline-none leading-relaxed"
+                        maxlength="500"></textarea>
+                    <div class="text-right text-sm mt-1" :class="boyfriendView.length > 450 ? 'text-red-300' : 'text-gray-400'">
+                        已输入 {{boyfriendView.length}} / 500 字
+                    </div>
+                </div>
+
+                <div class="mb-8">
+                    <h3 class="text-xl font-semibold mb-4 p-3 bg-pink-900 bg-opacity-30 rounded-lg">
+                        <i class="fas fa-female mr-2"></i>👩 女方视角陈述
+                    </h3>
+                    <textarea v-model="girlfriendView" placeholder="请女方详细描述事情的经过、你的感受和想法...（示例：他一下班就打游戏，说好的陪我散步总被忘记，感觉不被重视）"
+                        class="w-full h-48 p-4 bg-gray-900 rounded-lg border border-pink-800 focus:border-pink-400 focus:outline-none leading-relaxed"
+                        maxlength="500"></textarea>
+                    <div class="text-right text-sm mt-1" :class="girlfriendView.length > 450 ? 'text-red-300' : 'text-gray-400'">
+                        已输入 {{girlfriendView.length}} / 500 字
+                    </div>
+                </div>
+
+                <button @click="submitCase" :disabled="submitting"
+                    class="w-full py-4 bg-gradient-to-r from-gray-800 to-gray-900 hover:from-gray-700 hover:to-gray-800 rounded-xl font-bold text-lg border border-gray-700 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center">
+                    <i class="fas fa-paw mr-3 text-2xl"></i>
+                    <span v-if="!submitting">呈交808法官喵阁审理</span>
+                    <span v-else><i class="fas fa-spinner fa-spin mr-2"></i>808法官正在推演中...</span>
+                </button>
+                <p class="text-center text-gray-500 text-sm mt-4"><i class="fas fa-info-circle mr-1"></i>为确保公正，请双方均如实陈述</p>
+            </div>
+
+            <!-- 右侧：判决结果 -->
+            <div class="verdict-card p-6 rounded-2xl shadow-xl">
+                <h2 class="text-2xl font-bold mb-6 border-l-4 border-yellow-500 pl-3">
+                    <i class="fas fa-scroll mr-2"></i>808法官最终判决书
+                </h2>
+
+                <div v-if="showResult" class="space-y-8">
+                    <!-- 法官形象 -->
+                    <div class="text-center p-4 bg-black bg-opacity-20 rounded-xl">
+                        <div class="text-7xl mb-2">🐈‍⬛</div>
+                        <div class="text-2xl font-bold mb-1">808 法官</div>
+                        <div class="text-gray-400 text-sm">首席黑猫裁判官 · 终身制喵职</div>
+                        <div class="mt-3 text-xs text-gray-500">判决ID：{{ caseId }} · 生效于 {{ verdictTime }}</div>
+                    </div>
+
+                    <!-- 责任天平 -->
+                    <div>
+                        <h3 class="text-xl font-semibold mb-4"><i class="fas fa-balance-scale mr-2"></i>责任天平分析</h3>
+                        <div class="relative score-bar bg-gray-700 mb-2">
+                            <div class="absolute inset-0 flex">
+                                <div :style="{ width: boyfriendScore + '%' }" class="bg-blue-600 transition-all duration-1000 ease-out"></div>
+                                <div :style="{ width: girlfriendScore + '%' }" class="bg-pink-600 transition-all duration-1000 ease-out"></div>
+                            </div>
+                            <div class="relative z-10 flex justify-between px-4 py-1 font-bold">
+                                <span>👨 男方 {{ boyfriendScore }}%</span>
+                                <span>👩 女方 {{ girlfriendScore }}%</span>
+                            </div>
+                        </div>
+                        <p class="text-center text-gray-400 text-sm mt-2"><i class="fas fa-lightbulb mr-1"></i>百分比仅代表在本案中的责任比重，而非爱的分量</p>
+                    </div>
+
+                    <!-- 法官评语 -->
+                    <div class="p-5 bg-gradient-to-r from-gray-800 to-gray-900 rounded-xl border border-gray-700">
+                        <h4 class="font-bold text-lg mb-3 flex items-center text-yellow-300">
+                            <i class="fas fa-comment-dots mr-2"></i>🐾 808法官庭训
+                        </h4>
+                        <p class="italic text-lg leading-relaxed">“{{ judgeComment }}”</p>
+                    </div>
+
+                    <!-- 核心问题剖析 -->
+                    <div>
+                        <h4 class="font-bold text-lg mb-3 flex items-center">
+                            <i class="fas fa-search mr-2"></i>核心问题剖析
+                        </h4>
+                        <div class="p-4 bg-gray-900 rounded-lg">
+                            <p class="text-gray-300 leading-relaxed">{{ verdictText }}</p>
+                        </div>
+                    </div>
+
+                    <!-- 和解建议 -->
+                    <div>
+                        <h4 class="font-bold text-lg mb-3 flex items-center">
+                            <i class="fas fa-heart-circle-check mr-2 text-red-400"></i>喵族和解建议
+                        </h4>
+                        <ul class="space-y-4">
+                            <li v-for="(suggestion, index) in suggestions" :key="index"
+                                class="flex items-start p-4 bg-gray-900 rounded-lg border-l-4 border-green-500 hover:bg-gray-800 transition">
+                                <span class="flex-shrink-0 w-8 h-8 bg-green-700 rounded-full text-center leading-8 font-bold mr-4">{{ index + 1 }}</span>
+                                <div>
+                                    <p class="font-medium mb-1">{{ suggestion.title }}</p>
+                                    <p class="text-gray-400 text-sm">{{ suggestion.detail }}</p>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="pt-6 border-t border-gray-800 text-center">
+                        <button @click="printVerdict" class="px-6 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg mr-4">
+                            <i class="fas fa-print mr-2"></i>保存判决书
+                        </button>
+                        <button @click="submitNewCase" class="px-6 py-2 bg-blue-700 hover:bg-blue-600 rounded-lg">
+                            <i class="fas fa-plus mr-2"></i>审理新案件
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 等待判决状态 -->
+                <div v-else class="h-full flex flex-col items-center justify-center py-12 text-center">
+                    <div class="text-8xl mb-6 cat-paw">🐾</div>
+                    <h3 class="text-3xl font-bold mb-4">法庭静候</h3>
+                    <p class="text-gray-400 max-w-md mx-auto leading-relaxed">
+                        本庭正在等待受理您的矛盾案件。<br>
+                        请808法官明察秋毫，一断于喵。
+                    </p>
+                    <div class="mt-8 p-4 bg-gray-900 rounded-lg border border-gray-800 text-sm text-left max-w-md">
+                        <p class="font-bold mb-2 text-yellow-300"><i class="fas fa-lightbulb mr-1"></i>提示：</p>
+                        <p class="text-gray-400">请双方在陈述时，尽量描述具体事件和自身感受，避免单纯指责对方，这将有助于808法官做出更精准的裁断。</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 页脚 -->
+        <footer class="mt-16 pt-8 border-t border-gray-800 text-center text-gray-500 text-sm">
+            <p class="mb-2"><i class="fas fa-code mr-1"></i> 本法庭由纯前端技术驱动，基于Vue.js与Tailwind CSS构建</p>
+            <p>© 2023 808猫猫法官法庭 | 本判决为AI模拟生成，旨在促进沟通，请勿作为真实法律依据 | <span class="text-gray-600">喵~</span></p>
+        </footer>
+    </div>
+
+    <script>
+    const { createApp } = Vue;
+    createApp({
+        data() {
+            return {
+                issueType: 'communication',
+                boyfriendView: '',
+                girlfriendView: '',
+                submitting: false,
+                showResult: false,
+                caseId: '',
+                boyfriendScore: 0,
+                girlfriendScore: 0,
+                judgeComment: '',
+                verdictText: '',
+                suggestions: [],
+                verdictTime: '',
+                // 示例数据
+                sampleCases: [
+                    { b: '我加班很累，只是想打会儿游戏放松，她就说我不上进。', g: '他每天回家就沉浸在游戏里，我们一周都说不上几句话，像合租室友。', type: '沟通问题' },
+                    { b: '我就是和同事聚餐，她总疑神疑鬼查手机，让我很没面子。', g: '他最近回家总躲着回消息，问起就发脾气，我很难不多想。', type: '信任问题' }
+                ]
+            };
+        },
+        methods: {
+            // 模拟AI法官的逻辑
+            simulateJudgement(boyText, girlText, type) {
+                // 这是一个简化的模拟逻辑。真实情况下，这里应调用DeepSeek API。
+                // 责任分数模拟（基于文本长度和关键词的简单算法）
+                let bScore = 50;
+                let gScore = 50;
+
+                // 简单关键词检测（实际应用应更复杂）
+                const bWords = boyText.toLowerCase();
+                const gWords = girlText.toLowerCase();
+                if (bWords.includes('总是') || bWords.includes('从来')) bScore += 10;
+                if (gWords.includes('总是') || gWords.includes('从来')) gScore += 10;
+                if (bWords.includes('对不起') || bWords.includes('理解')) bScore -= 5;
+                if (gWords.includes('对不起') || gWords.includes('理解')) gScore -= 5;
+
+                // 归一化到总和100
+                const total = bScore + gScore;
+                bScore = Math.round((bScore / total) * 100);
+                gScore = 100 - bScore;
+
+                // 法官评语库
+                const comments = [
+                    "喵！吵架就像两猫互哈，气势很足却伤不到皮毛。不如一起晒晒太阳，把话摊开说。",
+                    "本喵看来，你们都在用各自的猫砂盆，却怪对方不懂自己的习惯。换个角度，试试对方的盆？",
+                    "争端的小鱼干，往往一面烤焦了，另一面却没熟。需要的是翻转的勇气，而不是争抢。",
+                    "爱的线团有时候会缠住，越用力扯越紧。两位需要的是耐心，一起慢慢解开，而不是剪刀。"
+                ];
+                const analysisTexts = {
+                    communication: "核心矛盾在于表达与倾听的错位。一方在倾诉情绪，另一方却在接收批评，导致沟通频道完全错开。",
+                    trust: "矛盾的根源是安全感的暂时缺失。表面是对行为的质疑，实质是对关系稳定性的不安。",
+                    time: "问题本质是‘优先级’的感知差异。双方对‘重要的事’定义不同，且未达成共识。",
+                    money: "分歧不在数字本身，而在消费行为背后所代表的价值观和安全感需求。",
+                    life: "这是长期共同生活中，个人边界与共同习惯的摩擦，需要协商建立新的共同规则。",
+                    others: "这是一个复合型问题，涉及多个层面。建议从具体事件中抽离，先就沟通方式本身达成一致。"
+                };
+
+                // 建议库
+                const suggestionPool = [
+                    { title: "黄金30分钟冷静法", detail: "各自独处30分钟，写下3点对方可能的合理感受，再交换阅读。" },
+                    { title: "‘我句式’表达练习", detail: "约定一周内，所有诉求用‘我感到...当你...我希望...’的句式开头，禁用‘你总是...’。" },
+                    { title: "制造专属‘小鱼干时光’", detail: "每周固定2小时，不带手机，进行一件简单的共同活动（散步、做饭、拼图）。" },
+                    { title: "角色互换游戏", detail: "用10分钟，模仿对方的语气和角度，把刚才的争执重新说一遍。" },
+                    { title: "未来信笺", detail: "各自给6个月后的对方写一封信，描述希望那时两人关系的样子，并互相分享。" }
+                ];
+
+                // 随机选取
+                const selectedSuggestions = [];
+                const usedIndex = new Set();
+                while (selectedSuggestions.length < 3 && usedIndex.size < suggestionPool.length) {
+                    const randIdx = Math.floor(Math.random() * suggestionPool.length);
+                    if (!usedIndex.has(randIdx)) {
+                        selectedSuggestions.push(suggestionPool[randIdx]);
+                        usedIndex.add(randIdx);
+                    }
+                }
+
+                return {
+                    bScore,
+                    gScore,
+                    comment: comments[Math.floor(Math.random() * comments.length)],
+                    analysis: analysisTexts[type] || analysisTexts['others'],
+                    suggestions: selectedSuggestions
+                };
+            },
+            async submitCase() {
+                if (!this.boyfriendView.trim() || !this.girlfriendView.trim()) {
+                    alert('喵！请808法官提醒双方，陈述栏不能为空。');
+                    return;
+                }
+                if (this.boyfriendView.length < 10 || this.girlfriendView.length < 10) {
+                    if (!confirm('陈述过于简短，可能影响判决的精准度。是否确认提交？')) return;
+                }
+
+                this.submitting = true;
+                // 模拟网络请求延迟
+                await new Promise(resolve => setTimeout(resolve, 1500));
+
+                // 生成判决结果
+                const result = this.simulateJudgement(this.boyfriendView, this.girlfriendView, this.issueType);
+                this.caseId = 'CASE-' + Date.now().toString(36).toUpperCase();
+                this.boyfriendScore = result.bScore;
+                this.girlfriendScore = result.gScore;
+                this.judgeComment = result.comment;
+                this.verdictText = result.analysis;
+                this.suggestions = result.suggestions;
+                this.verdictTime = new Date().toLocaleString('zh-CN');
+                this.showResult = true;
+                this.submitting = false;
+            },
+            submitNewCase() {
+                this.showResult = false;
+                this.boyfriendView = '';
+                this.girlfriendView = '';
+                this.issueType = 'communication';
+            },
+            printVerdict() {
+                alert('功能提示：在真实场景中，此处可调用浏览器的打印功能（Ctrl+P）来保存判决书。\n当前已生成判决ID：' + this.caseId);
+            }
+        }
+    }).mount('#app');
+    </script>
+</body>
+</html>
